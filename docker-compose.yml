@@ -49,3 +49,5 @@ services:
       driver: fluentd
       options:
         tag: docker.nginx
+    depends_on:
+      - fluentd
