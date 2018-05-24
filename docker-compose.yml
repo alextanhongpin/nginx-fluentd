@@ -1,0 +1,51 @@
+version: '3.6'
+services:
+  # You need to build the fluentd docker image
+  # to install the elasticsearch gem plugin
+  fluentd:
+    # # To build your own local fluentd image, uncomment this
+    # # and comment the `image:` line
+    # build: ./fluentd
+    image: alextanhongpin/fluentd
+    ports:
+      - 127.0.0.1:24224:24224
+      - 127.0.0.1:24224:24224/udp
+    volumes:
+      - ./config:/fluentd/etc
+    environment:
+      - FLUENTD_CONF=fluentd.conf
+
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.2.3
+    environment:
+      - discovery.type=single-node
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "http.port=9200"
+      - "http.cors.allow-origin=http://127.0.0.1:1358"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-headers=X-Requested-With,X-Auth-Token,Content-Type,Content-Length,Authorization"
+      - "http.cors.allow-credentials=true"
+    ports:
+      - 127.0.0.1:9200:9200
+      - 127.0.0.1:9300:9300
+    # # Uncomment to enable persistent storage to elasticsearch
+    # volumes:
+    #   - ./tmp/elasticsearch:/usr/share/elasticsearch/data
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:6.2.3
+    environment:
+      ELASTICSEARCH_URL: http://elasticsearch:9200
+    ports:
+      - 127.0.0.1:5601:5601
+
+  nginx:
+    image: nginx:1.13.12
+    volumes:
+      - ./nginx:/usr/share/nginx/html
+    ports:
+      - 127.0.0.1:4000:80
+    logging:
+      driver: fluentd
+      options:
+        tag: docker.nginx
